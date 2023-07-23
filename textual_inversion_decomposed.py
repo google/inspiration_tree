@@ -20,7 +20,6 @@ import logging
 import math
 import os
 import random
-import warnings
 from pathlib import Path
 
 import numpy as np
@@ -32,7 +31,6 @@ import transformers
 from accelerate import Accelerator
 from accelerate.logging import get_logger
 from accelerate.utils import ProjectConfiguration, set_seed
-from huggingface_hub import create_repo, upload_folder
 
 # TODO: remove and import from diffusers.utils when the new version of diffusers is released
 from packaging import version
@@ -52,13 +50,13 @@ from diffusers import (
     StableDiffusionPipeline,
     UNet2DConditionModel,
 )
-import clip
 from diffusers.optimization import get_scheduler
 from diffusers.utils import check_min_version, is_wandb_available
 from diffusers.utils.import_utils import is_xformers_available
 import wandb
 from torch.utils.data import WeightedRandomSampler
 from torchvision import transforms
+import shutil
     
 
 if version.parse(version.parse(PIL.__version__).base_version) >= version.parse("9.1.0"):
@@ -154,8 +152,8 @@ def parse_args():
     parser.add_argument(
         "--pretrained_model_name_or_path",
         type=str,
-        default=None,
-        required=True,
+        default="runwayml/stable-diffusion-v1-5",
+        required=False,
         help="Path to pretrained model or model identifier from huggingface.co/models.",
     )
     parser.add_argument(
@@ -182,7 +180,7 @@ def parse_args():
         help="A token to use as a placeholder for the concept.",
     )
     parser.add_argument(
-        "--initializer_token", type=str, default=None, help="A token to use as initializer word."
+        "--initializer_token", type=str, default="object object", help="A token to use as initializer word."
     )
     parser.add_argument("--learnable_property", type=str, default="object", help="Choose between 'object' and 'style'")
     parser.add_argument("--repeats", type=int, default=100, help="How many times to repeat the training data.")
@@ -206,7 +204,7 @@ def parse_args():
         "--center_crop", action="store_true", help="Whether to center crop images before resizing to resolution."
     )
     parser.add_argument(
-        "--train_batch_size", type=int, default=16, help="Batch size (per device) for the training dataloader."
+        "--train_batch_size", type=int, default=2, help="Batch size (per device) for the training dataloader."
     )
     parser.add_argument("--num_train_epochs", type=int, default=100)
     parser.add_argument(
@@ -218,7 +216,7 @@ def parse_args():
     parser.add_argument(
         "--gradient_accumulation_steps",
         type=int,
-        default=1,
+        default=4,
         help="Number of updates steps to accumulate before performing a backward/update pass.",
     )
     parser.add_argument(
@@ -229,13 +227,12 @@ def parse_args():
     parser.add_argument(
         "--learning_rate",
         type=float,
-        default=1e-4,
+        default=5.0e-04,
         help="Initial learning rate (after the potential warmup period) to use.",
     )
     parser.add_argument(
         "--scale_lr",
-        action="store_true",
-        default=False,
+        action="store_false",
         help="Scale the learning rate by the number of GPUs, gradient accumulation steps, and batch size.",
     )
     parser.add_argument(
@@ -292,6 +289,9 @@ def parse_args():
         ),
     )
     parser.add_argument("--wandb_run_name", type=str, default="test")
+    parser.add_argument("--wandb_user", type=str, default="none")
+    parser.add_argument("--wandb_project_name", type=str, default="none")
+     
     
     parser.add_argument(
         "--validation_prompt",
@@ -319,6 +319,16 @@ def parse_args():
     parser.add_argument("--local_rank", type=int, default=-1, help="For distributed training: local_rank")
     
     parser.add_argument(
+        "--checkpointing_steps",
+        type=int,
+        default=200,
+        help=(
+            "Save a checkpoint of the training state every X updates. These checkpoints are only suitable for resuming"
+            " training using `--resume_from_checkpoint`."
+        ),
+    )
+
+    parser.add_argument(
         "--checkpoints_total_limit",
         type=int,
         default=None,
@@ -342,7 +352,7 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--t_dist", type=float, default=0
+        "--t_dist", type=float, default=0.5
     )
 
     parser.add_argument(
@@ -724,7 +734,7 @@ def main():
     args.num_train_epochs = math.ceil(args.max_train_steps / num_update_steps_per_epoch)
 
     if args.report_to == "wandb":
-        wandb.init(project="abstraction_tree_04_16", entity="yael-vinker",
+        wandb.init(project=args.wandb_project_name, entity=args.wandb_user,
                    config=args, name=args.wandb_run_name, id=wandb.util.generate_id())
     
     log_validation(text_encoder, tokenizer, unet, vae, args, accelerator, torch.float32, 0, 0)
@@ -741,6 +751,15 @@ def main():
     logger.info(f"  Total optimization steps = {args.max_train_steps}")
     global_step = 0
     first_epoch = 0
+    # Potentially load in the weights and states from a previous save
+    if args.resume_from_checkpoint:
+        accelerator.print(f"Resuming from checkpoint {args.resume_from_checkpoint}")
+        accelerator.load_state(args.resume_from_checkpoint)
+        global_step = int(os.path.basename(args.resume_from_checkpoint).split("-")[1])
+
+        resume_global_step = global_step * args.gradient_accumulation_steps
+        first_epoch = global_step // num_update_steps_per_epoch
+        resume_step = resume_global_step % (num_update_steps_per_epoch * args.gradient_accumulation_steps)
     
     # Only show the progress bar once on each machine.
     progress_bar = tqdm(range(global_step, args.max_train_steps), disable=not accelerator.is_local_main_process)
@@ -757,6 +776,11 @@ def main():
     for epoch in range(first_epoch, args.num_train_epochs):
         text_encoder.train()
         for step, batch in enumerate(train_dataloader):
+            # Skip steps until we reach the resumed step
+            if args.resume_from_checkpoint and epoch == first_epoch and step < resume_step:
+                if step % args.gradient_accumulation_steps == 0:
+                    progress_bar.update(1)
+                continue
 
             with accelerator.accumulate(text_encoder):
                 # Convert images to latent space
@@ -824,6 +848,33 @@ def main():
                 if global_step % args.save_steps == 0:
                     save_path = os.path.join(args.output_dir, f"learned_embeds-steps-{global_step}.bin")
                     save_progress(text_encoder, placeholder_token_ids, accelerator, args, save_path)
+                
+                if accelerator.is_main_process:
+                    if global_step % args.checkpointing_steps == 0:
+                        # _before_ saving state, check if this save would set us over the `checkpoints_total_limit`
+                        if args.checkpoints_total_limit is not None:
+                            checkpoints = os.listdir(args.output_dir)
+                            checkpoints = [d for d in checkpoints if d.startswith("checkpoint")]
+                            checkpoints = sorted(checkpoints, key=lambda x: int(x.split("-")[1]))
+
+                            # before we save the new checkpoint, we need to have at _most_ `checkpoints_total_limit - 1` checkpoints
+                            if len(checkpoints) >= args.checkpoints_total_limit:
+                                num_to_remove = len(checkpoints) - args.checkpoints_total_limit + 1
+                                removing_checkpoints = checkpoints[0:num_to_remove]
+
+                                logger.info(
+                                    f"{len(checkpoints)} checkpoints already exist, removing {len(removing_checkpoints)} checkpoints"
+                                )
+                                logger.info(f"removing checkpoints: {', '.join(removing_checkpoints)}")
+
+                                for removing_checkpoint in removing_checkpoints:
+                                    removing_checkpoint = os.path.join(args.output_dir, removing_checkpoint)
+                                    shutil.rmtree(removing_checkpoint)
+
+                        save_path = os.path.join(args.output_dir, f"checkpoint-{global_step}")
+                        accelerator.save_state(save_path)
+                        logger.info(f"Saved state to {save_path}")
+
                 if args.validation_prompt is not None and global_step % args.validation_steps == 0:
                     log_validation(text_encoder, tokenizer, unet, vae, args, accelerator, weight_dtype, epoch, global_step)
 
