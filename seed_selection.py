@@ -7,10 +7,11 @@ import math
 import torch
 from diffusers import StableDiffusionPipeline
 from IPython.display import clear_output
-from transformers import CLIPImageProcessor, CLIPModel, CLIPTokenizer
+from transformers import CLIPImageProcessor, CLIPModel
 from PIL import Image
 import re
 import argparse
+import utils
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -23,22 +24,6 @@ def parse_args():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     args.device = device
     return args
-
-
-def load_tokens(pipe, data, device):
-    """
-    Adds the new learned tokens into the predefined dictionary of pipe.
-    """
-    added_tokens = []
-    for t_ in data.keys():
-        added_tokens.append(t_)
-    num_added_tokens = pipe.tokenizer.add_tokens(added_tokens)
-    pipe.text_encoder.resize_token_embeddings(len(pipe.tokenizer))
-    for token_ in data.keys():
-        ref_token = pipe.tokenizer.tokenize(token_)
-        ref_indx = pipe.tokenizer.convert_tokens_to_ids(ref_token)[0]
-        embd_cur = data[token_].to(device).to(dtype=torch.float16)
-        pipe.text_encoder.text_model.embeddings.token_embedding.weight[ref_indx] = embd_cur
 
 
 def get_tree_tokens(args, seeds):
@@ -74,7 +59,7 @@ if __name__ == "__main__":
     print(prompts_per_seed)
     
     pipe = StableDiffusionPipeline.from_pretrained(args.model_id, torch_dtype=torch.float16, safety_checker=None, requires_safety_checker=False).to(args.device)
-    load_tokens(pipe, prompt_to_vec, args.device)
+    utils.load_tokens(pipe, prompt_to_vec, args.device)
 
     print("Prompts loaded to pipe ...")
     print(prompt_to_vec.keys())

@@ -40,6 +40,7 @@ from torchvision import transforms
 from tqdm.auto import tqdm
 from transformers import CLIPTextModel, CLIPTokenizer
 import matplotlib.pyplot as plt
+import glob
 
 import diffusers
 from diffusers import (
@@ -460,7 +461,7 @@ class TextualInversionDataset(Dataset):
         self.center_crop = center_crop
         self.flip_p = flip_p
 
-        self.image_paths = [os.path.join(self.data_root, file_path) for file_path in os.listdir(self.data_root)]
+        self.image_paths = glob.glob(f"{self.data_root}/*.png") + glob.glob(f"{self.data_root}/*.jpg") + glob.glob(f"{self.data_root}/*.jpeg")
 
         self.num_images = len(self.image_paths)
         self._length = self.num_images
