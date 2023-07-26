@@ -4,6 +4,7 @@ from diffusers import StableDiffusionPipeline
 import numpy as np
 import matplotlib.pyplot as plt
 from transformers import CLIPImageProcessor, CLIPModel
+import glob
 
 
 def load_tokens(pipe, data, device):
@@ -142,14 +143,20 @@ def save_children_nodes(parent_node, children_node_path, concept_output_path, de
     data = torch.load(children_node_path)
     left_child_code = {f"v{left_child_number}" :data["<*>"]}
     right_child_code = {f"v{right_child_number}": data["<&>"]}
-    os.mkdir(f"{concept_output_path}/v{left_child_number}")
-    os.mkdir(f"{concept_output_path}/v{right_child_number}")
+    if not os.path.exists(f"{concept_output_path}/v{left_child_number}"):
+        os.mkdir(f"{concept_output_path}/v{left_child_number}")
+    if not os.path.exists(f"{concept_output_path}/v{right_child_number}"):
+        os.mkdir(f"{concept_output_path}/v{right_child_number}")
     torch.save(left_child_code, f"{concept_output_path}/v{left_child_number}/embeds.bin")
     torch.save(right_child_code, f"{concept_output_path}/v{right_child_number}/embeds.bin")
     print(f"Results saved to:\n[{concept_output_path}/v{left_child_number}/embeds.bin]\n[{concept_output_path}/v{right_child_number}/embeds.bin]")
 
-    generate_training_data(f"{concept_output_path}/v{left_child_number}/embeds.bin", f"v{left_child_number}", f"concept_output_path/v{left_child_number}", device, MODEL_ID, MODEL_ID_CLIP)
-    generate_training_data(f"{concept_output_path}/v{right_child_number}/embeds.bin", f"v{right_child_number}", f"concept_output_path/v{right_child_number}", device, MODEL_ID, MODEL_ID_CLIP)
+    files_l = glob.glob(f"{concept_output_path}/v{left_child_number}/*.png") + glob.glob(f"{concept_output_path}/v{left_child_number}/*.jpg") + glob.glob(f"{concept_output_path}/v{left_child_number}/*.jpeg")
+    files_r = glob.glob(f"{concept_output_path}/v{right_child_number}/*.png") + glob.glob(f"{concept_output_path}/v{right_child_number}/*.jpg") + glob.glob(f"{concept_output_path}/v{right_child_number}/*.jpeg")
+    if not len(files_l):
+        generate_training_data(f"{concept_output_path}/v{left_child_number}/embeds.bin", f"v{left_child_number}", f"{concept_output_path}/v{left_child_number}", device, MODEL_ID, MODEL_ID_CLIP)
+    if not len(files_r):
+        generate_training_data(f"{concept_output_path}/v{right_child_number}/embeds.bin", f"v{right_child_number}", f"{concept_output_path}/v{right_child_number}", device, MODEL_ID, MODEL_ID_CLIP)
 
 
 

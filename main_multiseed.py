@@ -6,6 +6,12 @@ import subprocess as sp
 import sys
 import torch
 from shutil import copyfile
+import utils
+import glob
+
+MODEL_ID = "runwayml/stable-diffusion-v1-5"
+MODEL_ID_CLIP = "openai/clip-vit-base-patch32"
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -38,6 +44,17 @@ def run_seed(args, seed):
 if __name__ == "__main__":
     args = parse_args()
 
+    training_data_dir = f"input_concepts/{args.parent_data_dir}/{args.node}"
+    if not os.path.exists(training_data_dir):
+        raise AssertionError("There is no data in " + training_data_dir)
+    files = glob.glob(f"{training_data_dir}/*.png") + glob.glob(f"{training_data_dir}/*.jpg") + glob.glob(f"{training_data_dir}/*.jpeg")
+
+    if not len(files) > 1:
+        if not os.path.exists(f"{training_data_dir}/embeds.bin"):
+            raise AssertionError("There is no child code in [" + training_data_dir + "/embeds.bin] to generate the data. Please run with parent node first.")
+        print("Generating dataset...")
+        utils.generate_training_data(f"{training_data_dir}/embeds.bin", args.node, training_data_dir, device, MODEL_ID, MODEL_ID_CLIP)
+
     # run textual inversion for 200 steps
     if args.multiprocess:
         ncpus = 10
@@ -56,7 +73,7 @@ if __name__ == "__main__":
     
 
     # Run seed selection
-    sp.run([f"CUDA_VISIBLE_DEVICES={args.GPU_ID}", "python", "seed_selection.py",
+    sp.run(["python", "seed_selection.py",
             "--path_to_new_tokens", f"outputs/{args.parent_data_dir}", 
             "--node", f"{args.node}"])
     seeds_scores = torch.load(f"outputs/{args.parent_data_dir}/{args.node}/consistency_test/seed_scores.bin")
@@ -81,3 +98,7 @@ if __name__ == "__main__":
          f"outputs/{args.parent_data_dir}/{args.node}/learned_embeds.bin")
     copyfile(f"outputs/{args.parent_data_dir}/{args.node}/{args.node}_seed{best_seed}/learned_embeds-steps-1000.bin",
          f"outputs/{args.parent_data_dir}/{args.node}/learned_embeds-steps-1000.bin")
+    
+    # Saves some samples of the final node 
+    utils.save_children_nodes(args.node, f"outputs/{args.parent_data_dir}/{args.node}/learned_embeds-steps-1000.bin", f"input_concepts/{args.parent_data_dir}", device, MODEL_ID, MODEL_ID_CLIP)
+    utils.save_rev_samples(f"outputs/{args.parent_data_dir}/{args.node}", f"outputs/{args.parent_data_dir}/{args.node}/learned_embeds-steps-1000.bin", MODEL_ID, device)
