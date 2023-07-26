@@ -1,6 +1,10 @@
 # Concept Decomposition for Visual Exploration and Inspiration
-Official implementation.
+<br>
 <a href="https://inspirationtree.github.io/inspirationtree/"><img src="https://img.shields.io/static/v1?label=Project&message=Website&color=red" height=20.5></a> 
+<br>
+<!-- Official implementation. -->
+<br>
+
 
 <p align="center">
 <img src="repo_images/teaser.jpeg" width="90%"/>  
@@ -29,7 +33,7 @@ Our code relies on the [diffusers](https://github.com/huggingface/diffusers) lib
 
 # Usage
 <p align="center">
-<img src="repo_images/usage.jpg" width="70%"/>  
+<img src="repo_images/usage.jpg" width="50%"/>  
 <br>
 This code will allow you to generate a tree per concept, and play with the different prompts and combinations for the generated tree (under "inspiration_tree_playground.ipynb").
 </p>
