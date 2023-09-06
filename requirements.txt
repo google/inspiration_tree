@@ -98,7 +98,7 @@ tokenizers==0.13.2
 torch==1.7.1+cu110
 torchaudio==0.7.2
 torchvision==0.8.2+cu110
-tornado==6.2
+tornado==6.3.3
 tqdm==4.64.1
 traitlets==5.9.0
 transformers==4.26.0
