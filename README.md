@@ -68,3 +68,18 @@ Notes:
 
 # Acknowledgements
 Our code builds on the [diffusers implementation of textual inversion](https://github.com/huggingface/diffusers/tree/main/examples/textual_inversion) 
+
+## Citation
+If you find this useful for your research, please cite the following:
+```bibtex
+@article{vinker2023concept,
+  title={Concept Decomposition for Visual Exploration and Inspiration},
+  author={Yael Vinker and Andrey Voynov and Daniel Cohen-Or and Ariel Shamir},
+  journal={arXiv preprint arXiv:2305.18203},
+  year={2023}
+}
+```
+
+## Disclaimer
+
+This is not an officially supported Google product.
