@@ -1,15 +1,23 @@
 # Concept Decomposition for Visual Exploration and Inspiration
-<br>
-<a href="https://inspirationtree.github.io/inspirationtree/"><img src="https://img.shields.io/static/v1?label=Project&message=Website&color=red" height=20.5></a> 
-<br>
+
+<a href="https://inspirationtree.github.io/inspirationtree/"><img src="https://img.shields.io/static/v1?label=Project&message=Website&color=blue"></a>
+<a href="https://arxiv.org/abs/2305.18203"><img src="https://img.shields.io/badge/arXiv-2305.16311-b31b1b.svg"></a>
+<a href="https://www.apache.org/licenses/LICENSE-2.0.txt"><img src="https://img.shields.io/badge/License-Apache-yellow"></a>
 <!-- Official implementation. -->
 <br>
 
 
 <p align="center">
 <img src="repo_images/teaser.jpeg" width="90%"/>  
-<br>
-Our method provides a tree-structured visual exploration space for a given unique concept. The nodes of the tree ("v_i") are newly learned textual vector embeddings, injected to the latent space of a pretrained text-to-image model. The nodes encode different aspects of the subject of interest. Through examining combinations within and across trees, the different aspects can inspire the creation of new designs and concepts, as can be seen below.
+  
+> <a href="https://inspirationtree.github.io/inspirationtree/">**Concept Decomposition for Visual Exploration and Inspiration**</a>
+>
+> <a href="https://yael-vinker.github.io/website/">Yael Vinker</a>,
+<a href="https://scholar.google.com/citations?user=imBjSgUAAAAJ&hl=ru">Andrey Voynov</a>,
+<a href="https://danielcohenor.com/">Daniel Cohen-Or</a>,
+<a href="https://faculty.runi.ac.il/arik/site/index.asp">Ariel Shamir</a>
+> <br>
+> Our method provides a tree-structured visual exploration space for a given unique concept. The nodes of the tree ("v_i") are newly learned textual vector embeddings, injected to the latent space of a pretrained text-to-image model. The nodes encode different aspects of the subject of interest. Through examining combinations within > and across trees, the different aspects can inspire the creation of new designs and concepts, as can be seen below.
 </p>
 
 # Setup
