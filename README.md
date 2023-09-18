@@ -42,7 +42,7 @@ This code will allow you to generate a tree per concept, and play with the diffe
 ## Pretrained Models and Datasets
 As part of our code release and to assist with comparisons, we have also provided some of the trained models and datasets used in the paper. 
 
-All of our models can be found [here](https://drive.google.com/drive/). 
+All of our models (learned tokens from the paper) can be found undeer the "learned_tokens" directory. The notebook inspiration_tree_playground.ipynb shows how to load them and reproduce the results from the paper (under "Play with learned aspects from the paper"). 
 All datasets used from Textual Inversion can be found [here](https://drive.google.com/drive/).
 
 ## Generate your tree
