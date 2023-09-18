@@ -43,7 +43,7 @@ This code will allow you to generate a tree per concept, and play with the diffe
 As part of our code release and to assist with comparisons, we have also provided some of the trained models and datasets used in the paper. 
 
 All of our models (learned tokens from the paper) can be found undeer the "learned_tokens" directory. The notebook inspiration_tree_playground.ipynb shows how to load them and reproduce the results from the paper (under "Play with learned aspects from the paper"). 
-All datasets used from Textual Inversion can be found [here](https://drive.google.com/drive/).
+All datasets used from Textual Inversion can be found under "datasets".
 
 ## Generate your tree
 The logic for generating the tree is under "main_multiseed.py", which runs the framwork for a <b>single node</b>.
