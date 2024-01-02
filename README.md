@@ -33,8 +33,8 @@ source .tree_venv/bin/activate
 pip install -r requirements.txt
 ```
 Technical details:
-* CUDA 11.6
-* torch 1.7.1+cu110
+* CUDA 11.7
+* torch 1.13.1+cu117
 
 **Hugging Face Diffusers Library**  
 Our code relies on the [diffusers](https://github.com/huggingface/diffusers) library and the official [Stable Diffusion v1.4](https://huggingface.co/CompVis/stable-diffusion-v1-4) model.
@@ -57,6 +57,7 @@ All datasets used from Textual Inversion can be found under "datasets".
 The logic for generating the tree is under "main_multiseed.py", which runs the framwork for a <b>single node</b>.
 You can generate the tree by passing your own parameters to main_multiseed.py. An example is given in "run_decompose.sh":
 ```
+export GPU_ID=<your GPU ID, ex. - 0>
 python main_multiseed.py --parent_data_dir "cat_sculpture/" --node v0 --test_name "v0" --GPU_ID "${GPU_ID}" --multiprocess 0
 ```
 Notes:
