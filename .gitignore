@@ -1,3 +1,7 @@
 outputs/
 wandb/
 .history/
+env/
+venv/
+.tree_venv/
+__pycache__
