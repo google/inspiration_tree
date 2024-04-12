@@ -31,7 +31,7 @@ google-auth==2.16.1
 google-auth-oauthlib==0.4.6
 grpcio==1.51.3
 huggingface-hub==0.12.1
-idna==3.4
+idna==3.7
 imageio==2.26.0
 importlib-metadata==6.0.0
 ipykernel==6.16.2
