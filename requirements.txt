@@ -72,7 +72,7 @@ pyarrow==11.0.0
 pyasn1==0.4.8
 pyasn1-modules==0.2.8
 pyenchant==3.2.2
-Pygments==2.14.0
+Pygments==2.15.0
 pyparsing==3.0.9
 pyre-extensions==0.0.29
 python-dateutil==2.8.2
